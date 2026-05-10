@@ -8,6 +8,7 @@ import { EmployeeList } from '@/components/EmployeeList'
 import { EmployeeForm } from '@/components/EmployeeForm'
 import { ShiftForm } from '@/components/ShiftForm'
 import { MonthCalendar } from '@/components/MonthCalendar'
+import { ScheduleSummary } from '@/components/ScheduleSummary'
 import { DayDetailDialog } from '@/components/DayDetailDialog'
 import { GenerateShiftDialog } from '@/components/GenerateShiftDialog'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
@@ -157,12 +158,19 @@ export default function App() {
                 Tambahkan karyawan terlebih dahulu di tab <strong>Karyawan</strong>.
               </p>
             ) : (
-              <MonthCalendar
-                employees={employees}
-                assignments={assignments}
-                monthStart={monthStart}
-                onDayClick={handleDayClick}
-              />
+              <>
+                <MonthCalendar
+                  employees={employees}
+                  assignments={assignments}
+                  monthStart={monthStart}
+                  onDayClick={handleDayClick}
+                />
+                <ScheduleSummary
+                  employees={employees}
+                  assignments={assignments}
+                  monthStart={monthStart}
+                />
+              </>
             )}
           </TabsContent>
 

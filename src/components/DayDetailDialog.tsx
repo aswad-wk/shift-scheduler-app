@@ -131,6 +131,34 @@ export function DayDetailDialog({
               )
             },
           )}
+
+          {(() => {
+            const assignedIds = new Set(dayAssignments.map((a) => a.employeeId))
+            const liburList = employees.filter((e) => !assignedIds.has(e.id))
+            if (liburList.length === 0) return null
+            return (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded border bg-muted text-muted-foreground border-border">
+                    Libur / Tidak Dijadwalkan
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 pl-2">
+                  {liburList.map((emp) => (
+                    <div
+                      key={emp.id}
+                      className="flex items-center gap-1 bg-muted/50 border rounded-md px-2 py-1 text-sm text-muted-foreground"
+                    >
+                      <span>{emp.name}</span>
+                      {emp.position && (
+                        <span className="text-xs opacity-70">· {emp.position}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         <div className="flex justify-between items-center pt-2 border-t">
