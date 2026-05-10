@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarDays, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -7,36 +7,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmployeeList } from '@/components/EmployeeList'
 import { EmployeeForm } from '@/components/EmployeeForm'
 import { ShiftForm } from '@/components/ShiftForm'
-import { ScheduleView } from '@/components/ScheduleView'
+import { MonthCalendar } from '@/components/MonthCalendar'
+import { DayDetailDialog } from '@/components/DayDetailDialog'
+import { GenerateShiftDialog } from '@/components/GenerateShiftDialog'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import type { Employee, ShiftAssignment } from '@/types'
 
-function getMonday(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-function formatWeekRange(monday: Date): string {
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  const fmt = (d: Date) => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-  return `${fmt(monday)} – ${fmt(sunday)}, ${sunday.getFullYear()}`
+function formatMonthLabel(d: Date): string {
+  return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
 }
 
 export default function App() {
   const [employees, setEmployees] = useLocalStorage<Employee[]>('shift-employees', [])
   const [assignments, setAssignments] = useLocalStorage<ShiftAssignment[]>('shift-assignments', [])
 
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
+  const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()))
   const [empFormOpen, setEmpFormOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>()
   const [shiftFormOpen, setShiftFormOpen] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<ShiftAssignment | undefined>()
   const [defaultDate, setDefaultDate] = useState<string>('')
+  const [dayDetailOpen, setDayDetailOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState('')
+  const [generateOpen, setGenerateOpen] = useState(false)
 
   function handleAddEmployee() {
     setEditingEmployee(undefined)
@@ -50,13 +47,10 @@ export default function App() {
 
   function handleSaveEmployee(data: Omit<Employee, 'id'>) {
     if (editingEmployee) {
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === editingEmployee.id ? { ...e, ...data } : e)),
-      )
+      setEmployees((prev) => prev.map((e) => (e.id === editingEmployee.id ? { ...e, ...data } : e)))
       toast.success('Karyawan berhasil diperbarui')
     } else {
-      const newEmp: Employee = { id: crypto.randomUUID(), ...data }
-      setEmployees((prev) => [...prev, newEmp])
+      setEmployees((prev) => [...prev, { id: crypto.randomUUID(), ...data }])
       toast.success('Karyawan berhasil ditambahkan')
     }
   }
@@ -85,8 +79,7 @@ export default function App() {
       )
       toast.success('Shift berhasil diperbarui')
     } else {
-      const newAssignment: ShiftAssignment = { id: crypto.randomUUID(), ...data }
-      setAssignments((prev) => [...prev, newAssignment])
+      setAssignments((prev) => [...prev, { id: crypto.randomUUID(), ...data }])
       toast.success('Shift berhasil ditambahkan')
     }
   }
@@ -96,63 +89,67 @@ export default function App() {
     toast.success('Shift berhasil dihapus')
   }
 
-  function prevWeek() {
-    setWeekStart((d) => {
-      const prev = new Date(d)
-      prev.setDate(d.getDate() - 7)
-      return prev
-    })
+  function handleDayClick(date: string) {
+    setSelectedDate(date)
+    setDayDetailOpen(true)
   }
 
-  function nextWeek() {
-    setWeekStart((d) => {
-      const next = new Date(d)
-      next.setDate(d.getDate() + 7)
-      return next
-    })
+  function handleGenerateShifts(generated: Omit<ShiftAssignment, 'id'>[]) {
+    const newAssignments = generated.map((a) => ({ ...a, id: crypto.randomUUID() }))
+    setAssignments((prev) => [...prev, ...newAssignments])
+    toast.success(`${newAssignments.length} shift berhasil digenerate`)
+  }
+
+  function prevMonth() {
+    setMonthStart((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
+  }
+
+  function nextMonth() {
+    setMonthStart((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   }
 
   function goToday() {
-    setWeekStart(getMonday(new Date()))
+    setMonthStart(startOfMonth(new Date()))
   }
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
           <CalendarDays className="size-6 text-primary" />
           <h1 className="text-xl font-semibold">Jadwal Shift</h1>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-6">
+      <main className="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6">
         <Tabs defaultValue="schedule">
           <TabsList>
-            <TabsTrigger value="schedule">Jadwal Mingguan</TabsTrigger>
+            <TabsTrigger value="schedule">Jadwal Bulanan</TabsTrigger>
             <TabsTrigger value="employees">Karyawan</TabsTrigger>
           </TabsList>
 
           <TabsContent value="schedule" className="flex flex-col gap-4 mt-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Button size="icon" variant="outline" onClick={prevWeek} aria-label="Minggu lalu">
+                <Button size="icon" variant="outline" onClick={prevMonth} aria-label="Bulan lalu">
                   <ChevronLeft />
                 </Button>
-                <span className="text-sm font-medium min-w-48 text-center">
-                  {formatWeekRange(weekStart)}
+                <span className="text-sm font-medium min-w-40 text-center capitalize">
+                  {formatMonthLabel(monthStart)}
                 </span>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={nextWeek}
-                  aria-label="Minggu depan"
-                >
+                <Button size="icon" variant="outline" onClick={nextMonth} aria-label="Bulan depan">
                   <ChevronRight />
                 </Button>
               </div>
-              <Button size="sm" variant="outline" onClick={goToday}>
-                Hari ini
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={goToday}>
+                  Hari ini
+                </Button>
+                <Button size="sm" onClick={() => setGenerateOpen(true)}>
+                  <Sparkles data-icon="inline-start" />
+                  Generate Shift
+                </Button>
+              </div>
             </div>
 
             {employees.length === 0 ? (
@@ -160,13 +157,11 @@ export default function App() {
                 Tambahkan karyawan terlebih dahulu di tab <strong>Karyawan</strong>.
               </p>
             ) : (
-              <ScheduleView
+              <MonthCalendar
                 employees={employees}
                 assignments={assignments}
-                weekStart={weekStart}
-                onAdd={handleAddShift}
-                onEdit={handleEditShift}
-                onDelete={handleDeleteAssignment}
+                monthStart={monthStart}
+                onDayClick={handleDayClick}
               />
             )}
           </TabsContent>
@@ -196,6 +191,25 @@ export default function App() {
         employees={employees}
         initial={editingAssignment}
         defaultDate={defaultDate}
+      />
+
+      <DayDetailDialog
+        open={dayDetailOpen}
+        onClose={() => setDayDetailOpen(false)}
+        date={selectedDate}
+        employees={employees}
+        assignments={assignments}
+        onAdd={handleAddShift}
+        onEdit={handleEditShift}
+        onDelete={handleDeleteAssignment}
+      />
+
+      <GenerateShiftDialog
+        open={generateOpen}
+        onClose={() => setGenerateOpen(false)}
+        employees={employees}
+        assignments={assignments}
+        onGenerate={handleGenerateShifts}
       />
 
       <Toaster />
