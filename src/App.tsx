@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight, CalendarDays, Sparkles } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ChevronLeft, ChevronRight, CalendarDays, Sparkles, FileSpreadsheet, Image } from 'lucide-react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ import { ScheduleSummary } from '@/components/ScheduleSummary'
 import { DayDetailDialog } from '@/components/DayDetailDialog'
 import { GenerateShiftDialog } from '@/components/GenerateShiftDialog'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { exportMonthToExcel } from '@/lib/exportExcel'
+import { exportElementToPng } from '@/lib/exportImage'
 import type { Employee, ShiftAssignment } from '@/types'
 
 function startOfMonth(date: Date): Date {
@@ -35,6 +37,7 @@ export default function App() {
   const [dayDetailOpen, setDayDetailOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
   const [generateOpen, setGenerateOpen] = useState(false)
+  const calendarRef = useRef<HTMLDivElement>(null)
 
   function handleAddEmployee() {
     setEditingEmployee(undefined)
@@ -101,6 +104,18 @@ export default function App() {
     toast.success(`${newAssignments.length} shift berhasil digenerate`)
   }
 
+  function handleExportExcel() {
+    exportMonthToExcel(employees, assignments, monthStart)
+    toast.success('File Excel berhasil diunduh')
+  }
+
+  async function handleExportImage() {
+    if (!calendarRef.current) return
+    const filename = `Jadwal-${monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).replace(' ', '-')}.png`
+    await exportElementToPng(calendarRef.current, filename)
+    toast.success('Gambar jadwal berhasil diunduh')
+  }
+
   function prevMonth() {
     setMonthStart((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   }
@@ -130,25 +145,33 @@ export default function App() {
           </TabsList>
 
           <TabsContent value="schedule" className="flex flex-col gap-4 mt-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="flex items-center gap-2">
                 <Button size="icon" variant="outline" onClick={prevMonth} aria-label="Bulan lalu">
                   <ChevronLeft />
                 </Button>
-                <span className="text-sm font-medium min-w-40 text-center capitalize">
+                <span className="text-sm font-medium min-w-36 text-center capitalize">
                   {formatMonthLabel(monthStart)}
                 </span>
                 <Button size="icon" variant="outline" onClick={nextMonth} aria-label="Bulan depan">
                   <ChevronRight />
                 </Button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 sm:ml-auto">
                 <Button size="sm" variant="outline" onClick={goToday}>
                   Hari ini
                 </Button>
+                <Button size="sm" variant="outline" onClick={handleExportExcel} aria-label="Export Excel">
+                  <FileSpreadsheet className="size-4" />
+                  <span className="hidden sm:inline ml-1">Excel</span>
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleExportImage} aria-label="Export Gambar">
+                  <Image className="size-4" />
+                  <span className="hidden sm:inline ml-1">Gambar</span>
+                </Button>
                 <Button size="sm" onClick={() => setGenerateOpen(true)}>
                   <Sparkles data-icon="inline-start" />
-                  Generate Shift
+                  <span className="hidden sm:inline">Generate Shift</span>
                 </Button>
               </div>
             </div>
@@ -159,12 +182,14 @@ export default function App() {
               </p>
             ) : (
               <>
-                <MonthCalendar
-                  employees={employees}
-                  assignments={assignments}
-                  monthStart={monthStart}
-                  onDayClick={handleDayClick}
-                />
+                <div ref={calendarRef}>
+                  <MonthCalendar
+                    employees={employees}
+                    assignments={assignments}
+                    monthStart={monthStart}
+                    onDayClick={handleDayClick}
+                  />
+                </div>
                 <ScheduleSummary
                   employees={employees}
                   assignments={assignments}

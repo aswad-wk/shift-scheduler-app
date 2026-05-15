@@ -11,7 +11,8 @@ interface Props {
 }
 
 const DAY_NAMES = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-const MAX_NAMES = 3
+const MAX_NAMES_MOBILE = 2
+const MAX_NAMES_DESKTOP = 3
 
 function formatDate(date: Date) {
   return date.toISOString().split('T')[0]
@@ -27,6 +28,15 @@ function mondayIndex(date: Date) {
 
 function firstName(name: string) {
   return name.split(' ')[0]
+}
+
+function initials(name: string) {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
 }
 
 function shortTime(time: string) {
@@ -52,25 +62,41 @@ const SHIFT_STYLE = {
   },
 }
 
-function ShiftCard({ names, type }: { names: string[]; type: keyof typeof SHIFT_STYLE }) {
+function ShiftCard({ names, fullNames, type }: { names: string[]; fullNames: string[]; type: keyof typeof SHIFT_STYLE }) {
   if (names.length === 0) return null
   const style = SHIFT_STYLE[type]
-  const visible = names.slice(0, MAX_NAMES)
-  const extra = names.length - MAX_NAMES
+  const visibleMobile = names.slice(0, MAX_NAMES_MOBILE)
+  const extraMobile = names.length - MAX_NAMES_MOBILE
+  const visibleDesktop = names.slice(0, MAX_NAMES_DESKTOP)
+  const extraDesktop = names.length - MAX_NAMES_DESKTOP
   return (
     <div className={cn('rounded border px-1 py-0.5 flex flex-col gap-0.5', style.card)}>
       <div className="text-[9px] font-bold uppercase leading-none flex items-center gap-1">
-        <span>{style.label}</span>
+        <span className="hidden sm:inline">{style.label}</span>
         {style.time && <span className="font-normal opacity-70">{style.time}</span>}
       </div>
-      {visible.map((n) => (
-        <span key={n} className="text-[10px] font-medium leading-tight truncate">
-          {n}
-        </span>
-      ))}
-      {extra > 0 && (
-        <span className="text-[10px] leading-tight opacity-60">+{extra} lainnya</span>
-      )}
+      {/* Mobile: inisials */}
+      <div className="sm:hidden flex flex-wrap gap-x-0.5">
+        {visibleMobile.map((n, i) => (
+          <span key={n} className="text-[9px] font-semibold leading-tight">
+            {initials(fullNames[i])}{i < visibleMobile.length - 1 ? ',' : ''}
+          </span>
+        ))}
+        {extraMobile > 0 && (
+          <span className="text-[9px] leading-tight opacity-60">+{extraMobile}</span>
+        )}
+      </div>
+      {/* Desktop: first name */}
+      <div className="hidden sm:flex flex-col gap-0.5">
+        {visibleDesktop.map((n) => (
+          <span key={n} className="text-[10px] font-medium leading-tight truncate">
+            {n}
+          </span>
+        ))}
+        {extraDesktop > 0 && (
+          <span className="text-[10px] leading-tight opacity-60">+{extraDesktop} lainnya</span>
+        )}
+      </div>
     </div>
   )
 }
@@ -99,12 +125,13 @@ export function MonthCalendar({ employees, assignments, monthStart, onDayClick }
   )
 
   const assignmentsByDate = useMemo(() => {
-    const map: Record<string, { pagi: string[]; malam: string[]; assignedIds: Set<string> }> = {}
+    const map: Record<string, { pagi: string[]; pagiFull: string[]; malam: string[]; malamFull: string[]; assignedIds: Set<string> }> = {}
     for (const a of assignments) {
-      if (!map[a.date]) map[a.date] = { pagi: [], malam: [], assignedIds: new Set() }
+      if (!map[a.date]) map[a.date] = { pagi: [], pagiFull: [], malam: [], malamFull: [], assignedIds: new Set() }
       const emp = empMap[a.employeeId]
       if (emp) {
         map[a.date][a.shift].push(firstName(emp.name))
+        map[a.date][a.shift === 'pagi' ? 'pagiFull' : 'malamFull'].push(emp.name)
         map[a.date].assignedIds.add(a.employeeId)
       }
     }
@@ -129,32 +156,34 @@ export function MonthCalendar({ employees, assignments, monthStart, onDayClick }
           const data = assignmentsByDate[dateStr]
           const isToday = dateStr === todayStr
           const isCurrentMonth = date.getMonth() === monthStart.getMonth()
-          const liburNames = data
-            ? employees.filter((e) => !data.assignedIds.has(e.id)).map((e) => firstName(e.name))
+          const liburEmps = data
+            ? employees.filter((e) => !data.assignedIds.has(e.id))
             : []
+          const liburNames = liburEmps.map((e) => firstName(e.name))
+          const liburFullNames = liburEmps.map((e) => e.name)
 
           return (
             <button
               key={dateStr}
               onClick={() => onDayClick(dateStr)}
               className={cn(
-                'rounded-lg border p-1.5 min-h-[80px] flex flex-col gap-1 text-left transition-colors hover:bg-accent',
+                'rounded-lg border p-1 sm:p-1.5 min-h-[64px] sm:min-h-[80px] flex flex-col gap-1 text-left transition-colors hover:bg-accent',
                 isToday && 'border-primary bg-primary/5',
                 !isCurrentMonth && 'opacity-40',
               )}
             >
               <span
                 className={cn(
-                  'text-sm font-medium leading-none',
+                  'text-xs sm:text-sm font-medium leading-none',
                   isToday && 'text-primary font-bold',
                 )}
               >
                 {date.getDate()}
               </span>
               <div className="flex flex-col gap-1 w-full">
-                <ShiftCard names={data?.pagi ?? []} type="pagi" />
-                <ShiftCard names={data?.malam ?? []} type="malam" />
-                {data && <ShiftCard names={liburNames} type="libur" />}
+                <ShiftCard names={data?.pagi ?? []} fullNames={data?.pagiFull ?? []} type="pagi" />
+                <ShiftCard names={data?.malam ?? []} fullNames={data?.malamFull ?? []} type="malam" />
+                {data && <ShiftCard names={liburNames} fullNames={liburFullNames} type="libur" />}
               </div>
             </button>
           )

@@ -101,8 +101,8 @@ export function ScheduleSummary({ employees, assignments, monthStart }: Props) {
         {/* Per-employee table */}
         <div>
           <p className="text-sm font-medium mb-2">Per Karyawan</p>
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-lg border overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[360px]">
               <thead>
                 <tr className="bg-muted/40 text-muted-foreground text-xs">
                   <th className="text-left px-3 py-2 font-medium">Nama</th>
@@ -110,7 +110,7 @@ export function ScheduleSummary({ employees, assignments, monthStart }: Props) {
                   <th className="text-center px-3 py-2 font-medium">Pagi</th>
                   <th className="text-center px-3 py-2 font-medium">Malam</th>
                   <th className="text-center px-3 py-2 font-medium">Total</th>
-                  <th className="text-center px-3 py-2 font-medium">Jam</th>
+                  <th className="text-center px-3 py-2 font-medium hidden sm:table-cell">Jam</th>
                 </tr>
               </thead>
               <tbody>
@@ -137,7 +137,7 @@ export function ScheduleSummary({ employees, assignments, monthStart }: Props) {
                       )}
                     </td>
                     <td className="px-3 py-2 text-center font-medium">{emp.total}</td>
-                    <td className="px-3 py-2 text-center text-muted-foreground">{emp.total * 12}</td>
+                    <td className="px-3 py-2 text-center text-muted-foreground hidden sm:table-cell">{emp.total * 12}</td>
                   </tr>
                 ))}
               </tbody>
