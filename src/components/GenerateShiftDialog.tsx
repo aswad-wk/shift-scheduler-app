@@ -27,9 +27,10 @@ function toMonthInput(d: Date) {
 export function GenerateShiftDialog({ open, onClose, employees, assignments, onGenerate }: Props) {
   const [monthValue, setMonthValue] = useState(() => toMonthInput(new Date()))
 
-  const selectedMonth = new Date(monthValue + '-01')
-  const year = selectedMonth.getFullYear()
-  const month = selectedMonth.getMonth()
+  const [yearStr, monthStr] = monthValue.split('-')
+  const year = parseInt(yearStr)
+  const month = parseInt(monthStr) - 1
+  const selectedMonth = new Date(year, month, 1)
 
   const existingInMonth = assignments.filter((a) => {
     const d = new Date(a.date)
@@ -74,8 +75,7 @@ export function GenerateShiftDialog({ open, onClose, employees, assignments, onG
                 </p>
                 {existingInMonth > 0 && (
                   <p className="text-amber-600 dark:text-amber-400">
-                    ⚠ Bulan ini sudah punya {existingInMonth} shift. Shift baru akan ditambahkan
-                    (bukan menggantikan).
+                    ⚠ {existingInMonth} shift bulan ini akan dihapus dan digantikan.
                   </p>
                 )}
               </div>

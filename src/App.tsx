@@ -99,8 +99,16 @@ export default function App() {
   }
 
   function handleGenerateShifts(generated: Omit<ShiftAssignment, 'id'>[]) {
+    if (generated.length === 0) return
+    const [genYear, genMonth] = generated[0].date.split('-').map(Number)
     const newAssignments = generated.map((a) => ({ ...a, id: crypto.randomUUID() }))
-    setAssignments((prev) => [...prev, ...newAssignments])
+    setAssignments((prev) => {
+      const withoutMonth = prev.filter((a) => {
+        const [y, m] = a.date.split('-').map(Number)
+        return !(y === genYear && m === genMonth)
+      })
+      return [...withoutMonth, ...newAssignments]
+    })
     toast.success(`${newAssignments.length} shift berhasil digenerate`)
   }
 
