@@ -12,17 +12,11 @@ export function generateShifts(
   const results: Omit<ShiftAssignment, 'id'>[] = []
   const n = employees.length
 
-  let counter = 0
   for (let day = 1; day <= daysInMonth; day++) {
     const date = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    const shifts: { shift: ShiftType; idx: number }[] = [
-      { shift: 'pagi', idx: counter % n },
-      { shift: 'malam', idx: (counter + 1) % n },
-    ]
-    for (const { shift, idx } of shifts) {
-      results.push({ employeeId: employees[idx].id, date, shift, notes: '' })
-    }
-    counter += 2
+    const d = day - 1
+    results.push({ employeeId: employees[d % n].id, date, shift: 'pagi', notes: '' })
+    results.push({ employeeId: employees[(d + 1) % n].id, date, shift: 'malam', notes: '' })
   }
 
   return results
