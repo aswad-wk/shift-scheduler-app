@@ -1,4 +1,4 @@
-import type { Employee, ShiftAssignment, ShiftType } from '@/types'
+import type { Employee, ShiftAssignment } from '@/types'
 
 export function generateShifts(
   employees: Employee[],
