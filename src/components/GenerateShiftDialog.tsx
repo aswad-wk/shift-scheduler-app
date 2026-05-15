@@ -78,6 +78,12 @@ export function GenerateShiftDialog({ open, onClose, employees, assignments, onG
                     ⚠ {existingInMonth} shift bulan ini akan dihapus dan digantikan.
                   </p>
                 )}
+                {employees.length < 3 && (
+                  <p className="text-amber-600 dark:text-amber-400">
+                    ⚠ Aturan "habis malam = libur besoknya" butuh minimal 3 karyawan. Dengan{' '}
+                    {employees.length} karyawan, aturan ini tidak diterapkan.
+                  </p>
+                )}
               </div>
 
               {/* Preview first 3 days */}
