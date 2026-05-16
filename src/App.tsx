@@ -11,6 +11,7 @@ import { MonthCalendar } from '@/components/MonthCalendar'
 import { ScheduleSummary } from '@/components/ScheduleSummary'
 import { DayDetailDialog } from '@/components/DayDetailDialog'
 import { GenerateShiftDialog } from '@/components/GenerateShiftDialog'
+import { ExportLayout } from '@/components/ExportLayout'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { exportMonthToExcel } from '@/lib/exportExcel'
 import { exportElementToPng } from '@/lib/exportImage'
@@ -38,6 +39,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState('')
   const [generateOpen, setGenerateOpen] = useState(false)
   const calendarRef = useRef<HTMLDivElement>(null)
+  const printRef = useRef<HTMLDivElement>(null)
 
   function handleAddEmployee() {
     setEditingEmployee(undefined)
@@ -118,9 +120,9 @@ export default function App() {
   }
 
   async function handleExportImage() {
-    if (!calendarRef.current) return
+    if (!printRef.current) return
     const filename = `Jadwal-${monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).replace(' ', '-')}.png`
-    await exportElementToPng(calendarRef.current, filename)
+    await exportElementToPng(printRef.current, filename)
     toast.success('Gambar jadwal berhasil diunduh')
   }
 
@@ -254,6 +256,15 @@ export default function App() {
       />
 
       <Toaster />
+
+      {/* Off-screen print layout — captured by handleExportImage */}
+      <div
+        ref={printRef}
+        aria-hidden="true"
+        style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none' }}
+      >
+        <ExportLayout employees={employees} assignments={assignments} monthStart={monthStart} />
+      </div>
     </div>
   )
 }
