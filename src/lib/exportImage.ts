@@ -5,7 +5,7 @@ export async function exportElementToPng(element: HTMLElement, filename: string)
     backgroundColor: '#ffffff',
     width: element.scrollWidth,
     height: element.scrollHeight,
-    pixelRatio: 2,
+    pixelRatio: 3,
   })
   const link = document.createElement('a')
   link.download = filename

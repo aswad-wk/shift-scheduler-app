@@ -39,7 +39,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState('')
   const [generateOpen, setGenerateOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const calendarRef = useRef<HTMLDivElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   function handleAddEmployee() {
     setEditingEmployee(undefined)
@@ -120,11 +120,11 @@ export default function App() {
   }
 
   async function handleExportImage() {
-    if (!calendarRef.current) return
+    if (!exportRef.current) return
     flushSync(() => setIsExporting(true))
     try {
       const filename = `Jadwal-${monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).replace(' ', '-')}.png`
-      await exportElementToPng(calendarRef.current, filename)
+      await exportElementToPng(exportRef.current, filename)
       toast.success('Gambar jadwal berhasil diunduh')
     } finally {
       setIsExporting(false)
@@ -196,8 +196,12 @@ export default function App() {
                 Tambahkan karyawan terlebih dahulu di tab <strong>Karyawan</strong>.
               </p>
             ) : (
-              <>
-                <div ref={calendarRef} className="bg-background rounded-xl overflow-hidden">
+              <div
+                ref={exportRef}
+                className="flex flex-col gap-4"
+                style={isExporting ? { minWidth: 900, backgroundColor: '#fff', padding: 16 } : undefined}
+              >
+                <div className="bg-background rounded-xl overflow-hidden">
                   {isExporting && (
                     <div className="bg-[#1E3A5F] px-5 py-4 flex items-end justify-between">
                       <div>
@@ -224,7 +228,7 @@ export default function App() {
                   assignments={assignments}
                   monthStart={monthStart}
                 />
-              </>
+              </div>
             )}
           </TabsContent>
 
