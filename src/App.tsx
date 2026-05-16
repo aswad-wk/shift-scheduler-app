@@ -190,13 +190,28 @@ export default function App() {
               </p>
             ) : (
               <>
-                <div ref={calendarRef}>
-                  <MonthCalendar
-                    employees={employees}
-                    assignments={assignments}
-                    monthStart={monthStart}
-                    onDayClick={handleDayClick}
-                  />
+                <div ref={calendarRef} className="bg-background rounded-xl overflow-hidden">
+                  {/* Header — tampil di export gambar */}
+                  <div className="bg-[#1E3A5F] px-5 py-4 flex items-end justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-widest text-blue-300 uppercase">Jadwal Shift Karyawan</p>
+                      <p className="text-lg font-bold text-white capitalize">{formatMonthLabel(monthStart)}</p>
+                    </div>
+                    <div className="flex gap-3 pb-0.5">
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-white">{employees.length}</p>
+                        <p className="text-[10px] text-blue-300">Karyawan</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2 pt-3">
+                    <MonthCalendar
+                      employees={employees}
+                      assignments={assignments}
+                      monthStart={monthStart}
+                      onDayClick={handleDayClick}
+                    />
+                  </div>
                 </div>
                 <ScheduleSummary
                   employees={employees}
