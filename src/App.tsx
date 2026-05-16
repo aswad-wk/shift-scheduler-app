@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { ChevronLeft, ChevronRight, CalendarDays, Sparkles, FileSpreadsheet, Image } from 'lucide-react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
@@ -37,6 +38,7 @@ export default function App() {
   const [dayDetailOpen, setDayDetailOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
   const [generateOpen, setGenerateOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const calendarRef = useRef<HTMLDivElement>(null)
 
   function handleAddEmployee() {
@@ -119,9 +121,14 @@ export default function App() {
 
   async function handleExportImage() {
     if (!calendarRef.current) return
-    const filename = `Jadwal-${monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).replace(' ', '-')}.png`
-    await exportElementToPng(calendarRef.current, filename)
-    toast.success('Gambar jadwal berhasil diunduh')
+    flushSync(() => setIsExporting(true))
+    try {
+      const filename = `Jadwal-${monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).replace(' ', '-')}.png`
+      await exportElementToPng(calendarRef.current, filename)
+      toast.success('Gambar jadwal berhasil diunduh')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   function prevMonth() {
@@ -190,13 +197,27 @@ export default function App() {
               </p>
             ) : (
               <>
-                <div ref={calendarRef}>
-                  <MonthCalendar
-                    employees={employees}
-                    assignments={assignments}
-                    monthStart={monthStart}
-                    onDayClick={handleDayClick}
-                  />
+                <div ref={calendarRef} className="bg-background rounded-xl overflow-hidden">
+                  {isExporting && (
+                    <div className="bg-[#1E3A5F] px-5 py-4 flex items-end justify-between">
+                      <div>
+                        <p className="text-[10px] font-semibold tracking-widest text-blue-300 uppercase">Jadwal Shift Karyawan</p>
+                        <p className="text-lg font-bold text-white capitalize">{formatMonthLabel(monthStart)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-white">{employees.length}</p>
+                        <p className="text-[10px] text-blue-300">Karyawan</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-2 pt-3">
+                    <MonthCalendar
+                      employees={employees}
+                      assignments={assignments}
+                      monthStart={monthStart}
+                      onDayClick={handleDayClick}
+                    />
+                  </div>
                 </div>
                 <ScheduleSummary
                   employees={employees}
